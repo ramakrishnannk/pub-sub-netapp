@@ -12,6 +12,10 @@ advanced packaging tool (apt). All you have to do is open up the terminal and ty
 
 $ sudo apt-get install rabbitmq-server
 
+For installing pip in the system, we run the following command:
+
+$ sudo apt-get install python-pip
+
 Installing rabbitmq library pika which is python's rabbitmq implementation
 
 $ sudo pip install pika
