@@ -10,4 +10,10 @@ All you have to do is open up the terminal and type:
 
 $ sudo apt-get install rabbitmq-server
 
+Installing rabbitmq library pika which is python's rabbitmq implementation
 
+$ sudo pip install pika
+
+Since I have used tabulate library to display the CPU and Network stats, also execute the following command
+
+$ sudo pip install tabulate
