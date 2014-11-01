@@ -63,3 +63,18 @@ NOTE: We can enter multiple routing keys and the application is capable of
 subscribing to utilzation information of more than one raspberry pi.
 
 ######################### For running pistatsd.py #####################################
+The pistatsd.py file is an app written in python which reads cpu and network interface information from your Raspberry Pi, and publishes it via a RabbitMQ Server to a message exchange.
+
+The pistatsd.py app runs with the following commmand in the terminal:
+
+$ ./pistatsview.py -b message_broker [-p virtual_host] [-c login:password] -k routing_key
+
+There are four command line parameters that can be entered - message_broker (required), virtual host (optional), Login/Password (optional), and routing key (required).
+
+The -b argument for message broker must be a valid host name/IP address designating a server running RabbitMQ. If no message broker is entered, the program will not run.
+
+The -p argument for virtual_host will default to '/' if nothing is entered.
+
+The -c argument for Login/Password must be entered in the format login:password, and the arguments must match a user/password combination listed with permissions in the RabbitMQ server. If no argument is entered, it will default to "guest:guest"
+
+The -k argument for routing key can be anything, and whatever you enter will identify the data as coming from the Raspberry Pi device running this app. If no routing key is entered, the program will not run.
