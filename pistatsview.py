@@ -40,7 +40,7 @@ class StatsClientChannelHelper:
         :param frame: A Stack Frame object, if an intercepted signal caused this handler to be run
         :return: None
         """
-        # TODO: Attempt to gracefully stop pika's event loop
+        # Attempt to gracefully stop pika's event loop whenever a SIGINT is received
         self.__channel.stop_consuming()
 
 def show_stats_history(stats_history, routing_key):
@@ -143,7 +143,7 @@ def on_new_msg(channel, delivery_info, msg_properties, msg):
 # Guard try clause to catch any errors that aren't expected
 try:
     # The message broker hostname or IP address
-    host = "localhost"
+    host = None
 
     # The virtual host to connect to
     vhost = "/" # Defaults to the root virtual host
@@ -162,26 +162,30 @@ try:
     last_argv = sys.argv[len(sys.argv) - 1]
     for i in range(1, (len(sys.argv[1:]) + 1)):
         if sys.argv[i] == '-b':
-            if sys.argv[i + 1][0] == '-':
+            if sys.argv[i + 1][0] == '-' if not ((i + 1) >= len(sys.argv)) else True:
                 print >> sys.stderr, "Usage: %s -b message_broker [-p virtual_host] [-c login:password] -k routing_key" %(sys.argv[0])
+                print >> sys.stderr, "Please enter proper hostname or IP address of the message broker, now quitting!"
                 sys.exit(-1)
             host = sys.argv[i + 1]
             # print host
         elif sys.argv[i] == '-p':
-            if sys.argv[i + 1][0] == '-':
+            if sys.argv[i + 1][0] == '-' if not ((i + 1) >= len(sys.argv)) else True:
                 print >> sys.stderr, "Usage: %s -b message_broker [-p virtual_host] [-c login:password] -k routing_key" %(sys.argv[0])
+                print >> sys.stderr, "Please enter a proper virtual host, now quitting!"
                 sys.exit(-1)
             vhost = sys.argv[i + 1]
             # print vhost
         elif sys.argv[i] == '-c':
-            if sys.argv[i + 1][0] == '-' or (not sys.argv[i + 1].count(':') == 1):
+            if sys.argv[i + 1][0] == '-' or (not sys.argv[i + 1].count(':') == 1) if not ((i + 1) >= len(sys.argv)) else True:
                 print >> sys.stderr, "Usage: %s -b message_broker [-p virtual_host] [-c login:password] -k routing_key" %(sys.argv[0])
+                print >> sys.stderr, "Please enter proper credentials in the form 'username:password', now quitting!"
                 sys.exit(-1)
             credentials = sys.argv[i + 1]
             # print credentials
         elif sys.argv[i] == '-k':
-            if sys.argv[i + 1][0] == '-':
+            if sys.argv[i + 1][0] == '-' if not ((i + 1) >= len(sys.argv)) else True:
                 print >> sys.stderr, "Usage: %s -b message_broker [-p virtual_host] [-c login:password] -k routing_key" %(sys.argv[0])
+                print >> sys.stderr, "Please enter one or more routing key(s), now quitting!"
                 sys.exit(-1)
             further_args = sys.argv[(i + 1):]
             j = 0
@@ -190,7 +194,6 @@ try:
                 if further_args[j] == last_argv:
                     break
                 j += 1
-            print topics
 
     if host is None:
         print >> sys.stderr, "Error: You must specify a message broker to connect to"
@@ -199,6 +202,9 @@ try:
     if len(topics) == 0:
         print >> sys.stderr, "Error: You must specify at least one topic to subscribe to"
         sys.exit(-1)
+    
+    print "List of routing key(s) are"
+    print topics
 
     message_broker = None
     channel = None
@@ -216,11 +222,14 @@ try:
 
         pika_parameters = pika.ConnectionParameters(host=host, virtual_host=vhost, credentials=pika_credentials)
         message_broker = pika.BlockingConnection(pika_parameters)
+        print "A blocking connection named message_broker successfully created, now creating a channel"
 
         # Setup the channel and exchange
         channel = message_broker.channel()
+        print "Channel created, now declaring exchange 'pi_utilization' with type 'direct'"
         # Exchange declaration, NOTE that this exchange is not a durable one
         channel.exchange_declare(exchange='pi_utilization', type='direct')
+        print "Exchange declared successfully, now declaring an exclusive queue"
 
         # Setup signal handlers to shutdown this app when SIGINT or SIGTERM
         # is sent to this app
@@ -243,16 +252,18 @@ try:
 
         result = channel.queue_declare(exclusive=True)
         queue_name = result.method.queue
+        print "An exclusive queue declared successfully, now binding the queue and the exchange with the given routing key(s)"
 
         # Bind you queue to the message exchange, and register your new message event handler
         for topic in topics:
             channel.queue_bind(exchange='pi_utilization', queue=queue_name, routing_key=topic)
+        print "Binding of exchange with the declared queue successful, now start pika's event loop by calling channel.basic_consume"
 
         # Start pika's event loop
         channel.basic_consume(on_new_msg, queue=queue_name, no_ack=True)
+        print "Pika's event loop started"
 
         channel.start_consuming()
-
 
     except pika.exceptions.ProbableAccessDeniedError, pade:
         print >> sys.stderr, "Error: A Probable Access Denied Error occured: " + str(pade.message)
@@ -279,11 +290,15 @@ try:
         #TODO: Attempt to gracefully shutdown the connection to the message broker
         # Closing the channel gracefully
         if channel is not None:
+            print ""
+            print "Exited pika event loop, closing channel and the message broker"
             channel.close()
+            print "Channel closed successfully!"
         # For closing the connection gracefully
         if message_broker is not None:
             message_broker.close()
+            print "Message broker closed successfully, Shutting down gracefully!"
 
 except Exception, ee:
         # Add code here to handle the exception, print an error, and exit gracefully
-        print ee
+        print str(ee.message)
