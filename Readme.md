@@ -1,5 +1,15 @@
-You should have rabbitmq installed in the system:
+################## README.TXT FOR PUBLISH/SUBSCRIBE NETWORK APPLICATION FOR RASPBERRY PI######################
+Before running either the publish or subscribe programs (pistatsd and pistatsview, respectively), you should have 
+the Pika AMQP module installed on your Raspberry Pi. To do this, be sure to have pip installed:
 
+$ sudo apt-get install python-pip
+
+Once pip is installed on your Raspberry Pi, simply run the following command to install pika:
+
+$ sudo pip install pika
+
+If you will also be running your own RabbitMQ server (the server is required to run these applications and
+serves as the "middle-man" between the publisher and subscriber) you must install RabbitMQ.
 This will provide you with:
 1.  rabbitmq-server that will help you to create a message broker (in python using 
 	pika library functions).
@@ -12,22 +22,13 @@ advanced packaging tool (apt). All you have to do is open up the terminal and ty
 
 $ sudo apt-get install rabbitmq-server
 
-For installing pip in the system, we run the following command:
+######################### PISTATSVIEW.PY #####################################################################
 
-$ sudo apt-get install python-pip
-
-Installing rabbitmq library pika which is python's rabbitmq implementation
-
-$ sudo pip install pika
-
-######################### For running pistatsview.py ################################
-
-The pistatsview.py is a network application which is based on the Advanced Message 
-Queuing Protocol (AMQP), which is an application layer protocol for message oriented
-middleware [1]. pistatsview.py is an AMQP based subscriber which subscribes to
+The pistatsview.py file is a network application based on the Advanced Message 
+Queuing Protocol (AMQP). This is an application layer protocol for message oriented
+middleware [1]. pistatsview.py is a subscriber which subscribes to any number of
 raspberry pi's utilization information like min, max and current CPU utilization and
-network throughput. It has the capability to filter out only those Raspberry pi 
-by parsing a set of routing keys whose information is what we require.
+network throughput. It has the capability to filter through Raspberry Pi data using routing keys.
 
 *************************								 *************************
 ************************* 	   ********************	     *************************
@@ -35,12 +36,8 @@ by parsing a set of routing keys whose information is what we require.
 *************************	   ********************	     *************************
 *************************								 *************************
 
-Assuming the login user as netapp and password as abc123. Assuming virtual host's 
-name is test and that the permissions to configure, read and write the virtual 
-host's resources for the user netapp is "*.".
-
-Since I have used tabulate library to display the CPU and Network stats, also execute 
-the following command
+The pistatsview.py file requires the use of the tabulate library to display the CPU and Network stats. To install
+tabulate, execute the following command:
 
 $ sudo pip install tabulate
 
@@ -66,13 +63,11 @@ exchange with the queue so that we filter out those routing keys which we enter 
 NOTE: We can enter multiple routing keys and the application is capable of 
 subscribing to utilzation information of more than one raspberry pi.
 
-######################### For running pistatsd.py #####################################
+######################### PISTATSD.PY #######################################################################
 
 The pistatsd.py file is an app written in python which reads cpu and network interface information from your Raspberry Pi, and publishes it via a RabbitMQ Server to a message exchange.
 
-Note: The Pika module must be installed to run this program. If you have pip installed, you can run the following command:
-
-$ sudo pip install pika
+Note: The Pika module must be installed to run this program (see the installation note in the first section).
 
 The pistatsd.py app runs with the following commmand in the terminal:
 
@@ -87,4 +82,13 @@ The -p argument for virtual_host will default to '/' if nothing is entered.
 The -c argument for Login/Password must be entered in the format login:password, and the arguments must match a user/password combination listed with permissions in the RabbitMQ server. If no argument is entered, it will default to "guest:guest"
 
 The -k argument for routing key can be anything, and whatever you enter will identify the data as coming from the Raspberry Pi device running this app. If no routing key is entered, the program will not run.
+
+######################## LIST OF NON-STANDARD PYTHON MODULES REQUIRED #######################################
+The following is a list of non-standard python modules required to run the included applications. They are mentioned
+previously in this readme, but are provided here as a concise summary:
+
+Non-Standard Python Modules:
+-Pika
+-Tabulate
+-RabbitMQ-Server (if running your own server as the message broker)
 
