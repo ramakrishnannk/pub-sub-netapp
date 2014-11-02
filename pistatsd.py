@@ -196,23 +196,39 @@ try:
             # Sleep and then loop
             time.sleep(1.0)
 
+   except pika.exceptions.ProbableAccessDeniedError, pade:
+        print >> sys.stderr, "Error: A Probable Access Denied Error occured: " + str(pade.message)
+        print "Please enter a valid virtual host in the format '-p validhost'"
 
-    except pika.exceptions.AMQPError, ae:
-        print "Error: An AMQP Error occured: " + ae.message
+    except pika.exceptions.ProbableAuthenticationError, aue:
+        print >> sys.stderr, "Error: A Probable Authentication error occured: " + str(aue.message)
+        print "Please enter a valid username/password in the format '-c username:password'"
+        
+    except pika.exceptions.AMQPConnectionError, acoe:
+        print >> sys.stderr, "Error: An AMQP Connection Error occured: " + str(acoe.message)
+        print "Please enter a valid RabbitMQ host name in the format '-b WabbitHost'"
 
+    except pika.exceptions.AMQPChannelError, ache:
+        print >> sys.stderr, "Error: An AMQP Channel Error occured: " + str(ache.message)
+    
     except pika.exceptions.ChannelError, ce:
-        print "Error: A channel error occured: " + ce.message
+        print >> sys.stderr, "Error: A channel error occured: " + str(ce.message)
+    except pika.exceptions.AMQPError, ae:
+        print >> sys.stderr, "Error: An AMQP Error occured: " + str(ae.message)
 
+    #General catch-all handler as last resort
     except Exception, eee:
-        print "Error: An unexpected exception occured: " + eee.message
-
+        print >> sys.stderr, "Error: An unexpected exception occured: " + str(eee.message)
     finally:
         # Attempt to gracefully shutdown the connection to the message broker
         if channel is not None:
             channel.close()
         if message_broker is not None:
             message_broker.close()
-
+            
+except NameError, ec:
+    print "Error: A NameError has occured: It is likely that an invalid command line"
+    print "argument was passed.Please check your arguments and try again"
+    print "Error message: " + ec.message
 except Exception, ee:
-    # Add code here to handle the exception, print an error, and exit gracefully
-    sys.exit()
+    print "Error: An unexpected error occurred: " + ee.message
