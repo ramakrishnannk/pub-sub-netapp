@@ -301,4 +301,4 @@ try:
 
 except Exception, ee:
         # Add code here to handle the exception, print an error, and exit gracefully
-        print str(ee.message)
+        print >> sys.stderr, "Error: An unexpected exception occured: " + str(ee.message)
