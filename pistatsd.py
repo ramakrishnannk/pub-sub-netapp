@@ -28,6 +28,7 @@ def stop_stats_service(signal, frame):
                   handler to be run
     :return: None
     """
+    global publish_stats
     publish_stats = False
 
 def read_cpu_utilization():
