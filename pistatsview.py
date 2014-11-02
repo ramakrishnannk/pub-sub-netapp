@@ -40,7 +40,7 @@ class StatsClientChannelHelper:
         :param frame: A Stack Frame object, if an intercepted signal caused this handler to be run
         :return: None
         """
-        # TODO: Attempt to gracefully stop pika's event loop
+        # Attempt to gracefully stop pika's event loop whenever a SIGINT is received
         self.__channel.stop_consuming()
 
 def show_stats_history(stats_history, routing_key):
