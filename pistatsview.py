@@ -43,7 +43,7 @@ class StatsClientChannelHelper:
         # TODO: Attempt to gracefully stop pika's event loop
         self.__channel.stop_consuming()
 
-def show_stats_history(stats_history):
+def show_stats_history(stats_history, routing_key):
     """
     Displays stats history invoked by the event handler
 
@@ -53,7 +53,8 @@ def show_stats_history(stats_history):
     NOTE: We use package called tabulate to display the stats, Following url gives the source
     url: https://pypi.python.org/pypi/tabulate
     """
-    # Print the key
+    # Print the routing key whose message gets printed below:
+    print "%s :" %(routing_key)
 
     cpu_table = [["Type", "Current", "High", "Low"], ["CPU", stats_history["cpu"]["current"], stats_history["cpu"]["max"], stats_history["cpu"]["min"]]]
 
@@ -66,7 +67,7 @@ def show_stats_history(stats_history):
 
     print tabulate(net_table)
 
-def on_new_msg(channel, deliver_info, msg_properties, msg):
+def on_new_msg(channel, delivery_info, msg_properties, msg):
     """
     Event handler that processes new messages from the message broker
 
@@ -130,7 +131,7 @@ def on_new_msg(channel, deliver_info, msg_properties, msg):
                         stats_history["net"][iface][iface_mode]["current"] = stats["net"][iface][iface_mode]
 
             # Print the max, min and current stats value to stdout
-            show_stats_history(stats_history)
+            show_stats_history(stats_history, delivery_info.routing_key)
 
     except ValueError, ve:
         # Thrown by json.loads() if it couldn't parse a JSON object

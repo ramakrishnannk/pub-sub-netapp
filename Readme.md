@@ -12,6 +12,10 @@ advanced packaging tool (apt). All you have to do is open up the terminal and ty
 
 $ sudo apt-get install rabbitmq-server
 
+For installing pip in the system, we run the following command:
+
+$ sudo apt-get install python-pip
+
 Installing rabbitmq library pika which is python's rabbitmq implementation
 
 $ sudo pip install pika
@@ -63,6 +67,7 @@ NOTE: We can enter multiple routing keys and the application is capable of
 subscribing to utilzation information of more than one raspberry pi.
 
 ######################### For running pistatsd.py #####################################
+<<<<<<< HEAD
 The pistatsd.py file is an app written in python which reads cpu and network interface information from your Raspberry Pi, and publishes it via a RabbitMQ Server to a message exchange.
 
 Note: The Pika module must be installed to run this program. If you have pip installed, you can run the following command:
@@ -82,3 +87,5 @@ The -p argument for virtual_host will default to '/' if nothing is entered.
 The -c argument for Login/Password must be entered in the format login:password, and the arguments must match a user/password combination listed with permissions in the RabbitMQ server. If no argument is entered, it will default to "guest:guest"
 
 The -k argument for routing key can be anything, and whatever you enter will identify the data as coming from the Raspberry Pi device running this app. If no routing key is entered, the program will not run.
+=======
+>>>>>>> pistatsview_dev/pistatsview_dev
