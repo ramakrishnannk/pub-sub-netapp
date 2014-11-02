@@ -1,10 +1,7 @@
 #!/usr/bin/python
 """
-This file contains pseudo code which describes at a high level what should be
-implemented for the utilization service (i.e. pistatsd).
-
-This is the basic algorithm you will want to follow, although there are other
-ways to implement this pseudo code.
+This file contains pistatsd.py which will read the cpu and network interface
+statistics from the Raspberry Pi and publish them to a RabbitMQ exchange
 """
 
 import pika
@@ -17,7 +14,6 @@ import json
 # Global variable that controls running the app
 publish_stats = True
 
-
 def stop_stats_service(signal, frame):
     """
     A signal handler, that will cause the main execution loop to stop
@@ -28,6 +24,7 @@ def stop_stats_service(signal, frame):
                   handler to be run
     :return: None
     """
+    global publish_stats
     publish_stats = False
 
 def read_cpu_utilization():
@@ -74,7 +71,8 @@ def read_net_throughput():
 # ^^^^^^^^^^^^^^^^^^^^^^^
 
 # Guard try clause to catch any errors that aren't expected
-try:                
+try:
+    #Set each of the default values
     # The message broker host name or IP address
     host = None
     # The virtual host to connect to
@@ -85,6 +83,7 @@ try:
     topic = None
 
     #parse through command line arguments and assign parameters
+    #if nothing is passed, defaults as set above are used
     if sys.argv:
         for i in range(0,len(sys.argv)):
             if sys.argv[i] == "-b":
@@ -100,19 +99,6 @@ try:
             elif sys.argv[i] == "-k":
                 topic = sys.argv[i+1]
 
-    # Setup signal handlers to shutdown this app when SIGINT or SIGTERM is
-    # sent to this app
-    # For more info about signals, see: https://scholar.vt.edu/portal/site/0a8757e9-4944-4e33-9007-40096ecada02/page/e9189bdb-af39-4cb4-af04-6d263949f5e2?toolstate-701b9d26-5d9a-4273-9019-dbb635311309=%2FdiscussionForum%2Fmessage%2FdfViewMessageDirect%3FforumId%3D94930%26topicId%3D3507269%26messageId%3D2009512
-    signal_num = signal.SIGINT
-    try:
-        signal.signal(signal_num, stop_stats_service)
-        signal_num = signal.SIGTERM
-        signal.signal(signal_num, stop_stats_service)
-
-    except ValueError, ve:
-        print "Warning: Greceful shutdown may not be possible: Unsupported " \
-              "Signal: " + signal_num
-
     # Ensure that the user specified the required arguments
     if host is None:
         print "You must specify a message broker to connect to"
@@ -121,6 +107,17 @@ try:
     if topic is None:
         print "You must specify a topic to subscribe to"
         sys.exit()
+    # Setup signal handlers to shutdown this app when SIGINT or SIGTERM is
+    # sent to this app
+    signal_num = signal.SIGINT
+    try:
+        signal.signal(signal_num, stop_stats_service)
+        signal_num = signal.SIGTERM
+        signal.signal(signal_num, stop_stats_service)
+
+    except ValueError, ve:
+        print "Warning: Graceful shutdown may not be possible: Unsupported " \
+                "Signal: " + signal_num    
 
     try:
         # Connect to the message broker using the given broker address (host)
@@ -187,7 +184,7 @@ try:
             
             channel.basic_publish(exchange = 'pi_utilization', routing_key = topic,
                                   body = data)
-            print "Sent: ", data
+            #print "Sent: ", data
 
             # Save the current stats as the last stats
             last_stat_sample = current_stat_sample
@@ -196,23 +193,42 @@ try:
             # Sleep and then loop
             time.sleep(1.0)
 
+    except pika.exceptions.ProbableAccessDeniedError, pade:
+        print >> sys.stderr, "Error: A Probable Access Denied Error occured: " + str(pade.message)
+        print "Please enter a valid virtual host in the format '-p validhost'"
 
-    except pika.exceptions.AMQPError, ae:
-        print "Error: An AMQP Error occured: " + ae.message
+    except pika.exceptions.ProbableAuthenticationError, aue:
+        print >> sys.stderr, "Error: A Probable Authentication error occured: " + str(aue.message)
+        print "Please enter a valid username/password in the format '-c username:password'"
+        
+    except pika.exceptions.AMQPConnectionError, acoe:
+        print >> sys.stderr, "Error: An AMQP Connection Error occured: " + str(acoe.message)
+        print "Please enter a valid RabbitMQ host name in the format '-b WabbitHost'"
 
+    except pika.exceptions.AMQPChannelError, ache:
+        print >> sys.stderr, "Error: An AMQP Channel Error occured: " + str(ache.message)
+    
     except pika.exceptions.ChannelError, ce:
-        print "Error: A channel error occured: " + ce.message
-
+        print >> sys.stderr, "Error: A channel error occured: " + str(ce.message)
+    except pika.exceptions.AMQPError, ae:
+        print >> sys.stderr, "Error: An AMQP Error occured: " + str(ae.message)
+    #General catch-all handler as last resort
     except Exception, eee:
-        print "Error: An unexpected exception occured: " + eee.message
-
+        print >> sys.stderr, "Error: An unexpected exception occured: " + str(eee.message)
+    
     finally:
         # Attempt to gracefully shutdown the connection to the message broker
+        print "Application Shutting Down..."
         if channel is not None:
             channel.close()
         if message_broker is not None:
             message_broker.close()
-
+        sys.exit()
+except NameError, ne:
+    print "Error: A NameError has occured: It is likely that an invalid command line"
+    print "argument was passed.Please check your arguments and try again"
+    print "Error message: " + ne.message
+    sys.exit()
 except Exception, ee:
-    # Add code here to handle the exception, print an error, and exit gracefully
+    print "Error: An unexpected error occurred: " + ee.message
     sys.exit()
