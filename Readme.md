@@ -65,9 +65,13 @@ subscribing to utilzation information of more than one raspberry pi.
 ######################### For running pistatsd.py #####################################
 The pistatsd.py file is an app written in python which reads cpu and network interface information from your Raspberry Pi, and publishes it via a RabbitMQ Server to a message exchange.
 
+Note: The Pika module must be installed to run this program. If you have pip installed, you can run the following command:
+
+$ sudo pip install pika
+
 The pistatsd.py app runs with the following commmand in the terminal:
 
-$ ./pistatsview.py -b message_broker [-p virtual_host] [-c login:password] -k routing_key
+$ python pistatsd.py -b message_broker [-p virtual_host] [-c login:password] -k routing_key
 
 There are four command line parameters that can be entered - message_broker (required), virtual host (optional), Login/Password (optional), and routing key (required).
 
